@@ -63,7 +63,7 @@ MONOCHROME_CONVERTING_MODES = {
 }
 
 
-def prepare_image(image, ascii_width, block_size, contrast=15.0):
+def prepare_image(image, ascii_width, block_size, contrast=5.0):
     prepared_image = image.convert('L')
     image_width, image_height = image.size
     block_width, block_height = block_size
