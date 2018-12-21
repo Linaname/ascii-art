@@ -102,7 +102,7 @@ if __name__ == '__main__':
     path = args.path
     ascii_width = args.width or os.get_terminal_size().columns
     image = Image.open(path)
-    block_size = (1, 1)
-    convert_method = convert_for_fucking_tty
+    block_size = (1, 2)
+    convert_method = convert_3_bit
     art = create_art(image, ascii_width, block_size, convert_method)
     print(art)
