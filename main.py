@@ -1,5 +1,5 @@
 from PIL import Image
-import sys, os, argparse
+import os, argparse
 import constants
 
 
@@ -22,6 +22,56 @@ def get_block(pixels, ascii_position, block_size):
     return pixel_block
 
 
+def color_distance(point1, point2):
+    r1, g1, b1 = point1
+    r2, g2, b2 = point2
+    return abs(r1 - r2)**2 + abs(g1 - g2)**2 + abs(b1 - b2)**2
+
+
+def find_best_color(point, color_map):
+    code = min(color_map, key=lambda code: color_distance(point, color_map[code]))
+    return code
+
+
+def convert_for_tty(pixel_block):
+    block_size = (len(pixel_block[0]), len(pixel_block))
+    if block_size == (1, 2):
+        return convert_3_bit(pixel_block)
+    elif block_size == (1, 1):
+        return convert_4_bit(pixel_block)
+
+
+def convert_3_bit(pixel_block, r_threshold=128, g_threshold=128, b_threshold=128):
+    block_size = (len(pixel_block[0]), len(pixel_block))
+    if block_size == (1, 2):
+        top = pixel_block[0][0]
+        r, g, b = top
+        top_color = 40 + (r >= r_threshold)*1 + (g >= g_threshold)*2 + (b >= b_threshold)*4
+        bottom = pixel_block[1][0]
+        r, g, b = bottom
+        bottom_color = 30 + (r >= r_threshold)*1 + (g >= g_threshold)*2 + (b >= b_threshold)*4
+        return f'\033[0;{bottom_color};{top_color}m▄\033[0m'
+    elif block_size == (1, 1):
+        bottom = pixel_block[0][0]
+        r, g, b = bottom
+        bottom_color = 40 + (r >= r_threshold) * 1 + (g >= g_threshold) * 2 + (b >= b_threshold) * 4
+        return f'\033[0;{bottom_color}m \033[0m'
+
+
+def convert_4_bit(pixel_block):
+    block_size = (len(pixel_block[0]), len(pixel_block))
+    if block_size == (1, 2):
+        top = pixel_block[0][0]
+        top_code = find_best_color(top, constants.vga_4_bit_color_map) + 10
+        bottom = pixel_block[1][0]
+        bottom_code = find_best_color(bottom, constants.vga_4_bit_color_map)
+        return f'\033[0;{bottom_code};{top_code}m▄\033[0m'
+    elif block_size == (1, 1):
+        point = pixel_block[0][0]
+        code = find_best_color(point, constants.vga_4_bit_color_map)
+        return f'\033[0;{code}m█\033[0m'
+
+
 def convert_24_bit(pixel_block):
     block_size = (len(pixel_block[0]), len(pixel_block))
     if block_size == (1, 2):
@@ -39,48 +89,6 @@ def convert_24_bit(pixel_block):
         return f'\033[1m{bottom_color} \033[00m'
 
 
-def color_distance(point1, point2):
-    r1, g1, b1 = point1
-    r2, g2, b2 = point2
-    return abs(r1 - r2)**2 + abs(g1 - g2)**2 + abs(b1 - b2)**2
-
-
-def find_best_color(point, color_map):
-    code = min(color_map, key=lambda code: color_distance(point, color_map[code]))
-    return code
-
-
-def convert_for_fucking_tty(pixel_block):
-    block_size = (len(pixel_block[0]), len(pixel_block))
-    if block_size == (1, 2):
-        top = pixel_block[0][0]
-        top_code = find_best_color(top, constants.vga_color_map) + 10
-        bottom = pixel_block[1][0]
-        bottom_code = find_best_color(bottom, constants.vga_color_map)
-        return f'\033[0;{bottom_code};{top_code}m▄\033[0m'
-    elif block_size == (1, 1):
-        point = pixel_block[0][0]
-        code = find_best_color(point, constants.vga_advanced_color_map)
-        return f'\033[0;{code}m█\033[0m'
-
-
-def convert_3_bit(pixel_block, r_threshold=128, g_threshold=128, b_threshold=128):
-    block_size = (len(pixel_block[0]), len(pixel_block))
-    if block_size == (1, 2):
-        top = pixel_block[0][0]
-        r, g, b = top
-        top_color = 40 + (r >= r_threshold)*1 + (g >= g_threshold)*2 + (b >= b_threshold)*4
-        bottom = pixel_block[1][0]
-        r, g, b = bottom
-        bottom_color = 30 + (r >= r_threshold)*1 + (g >= g_threshold)*2 + (b >= b_threshold)*4
-        return f'\033[4;{bottom_color};{top_color}m▄\033[0m'
-    elif block_size == (1, 1):
-        bottom = pixel_block[0][0]
-        r, g, b = bottom
-        bottom_color = 40 + (r >= r_threshold) * 1 + (g >= g_threshold) * 2 + (b >= b_threshold) * 4
-        return f'\033[0;{bottom_color}m \033[0m'
-
-
 def create_art(image, ascii_width, block_size, convert_method):
     prepared_image = prepare_image(image, ascii_width, block_size)
     ascii_height = len(prepared_image)
@@ -94,15 +102,41 @@ def create_art(image, ascii_width, block_size, convert_method):
     return '\n'.join(lines)
 
 
+def parse_resolution(arg):
+    return tuple(map(int, arg.split('x')))
+
+
 if __name__ == '__main__':
+    method_map = {
+        '3': convert_3_bit,
+        '3/4': convert_for_tty,
+        '4': convert_4_bit,
+        '24': convert_24_bit,
+    }
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', help='path to image')
-    parser.add_argument('--width', type=int, help='art width (default: current terminal width)')
+    parser.add_argument('path',
+                        type=str,
+                        help='path to image',
+                        )
+    parser.add_argument('--width',
+                        type=int,
+                        help='art width (default: current terminal width)',
+                        )
+    parser.add_argument('--block',
+                        type=parse_resolution,
+                        help="size of pixel block converted to single char. Available:\u00A0'x1'(default),\u00A0'1x2'",
+                        default='1x1',
+                        )
+    parser.add_argument('--mode',
+                        type=str,
+                        help="color depth (bits) used in art. Available: '3', '3/4', '4', '24'",
+                        default='3/4',
+                        )
     args = parser.parse_args()
     path = args.path
     ascii_width = args.width or os.get_terminal_size().columns
     image = Image.open(path)
-    block_size = (1, 2)
-    convert_method = convert_3_bit
+    block_size = args.block
+    convert_method = method_map[args.mode]
     art = create_art(image, ascii_width, block_size, convert_method)
     print(art)

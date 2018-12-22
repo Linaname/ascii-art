@@ -50,7 +50,7 @@ block_symbols = {
     },
 }
 
-vga_advanced_color_map = {
+vga_4_bit_color_map = {
     30: (0,0,0),
     31: (170,0,0),
     32: (0,170,0),
@@ -69,7 +69,7 @@ vga_advanced_color_map = {
     97: (255,255,255),
 }
 
-vga_color_map = {
+vga_3_bit_color_map = {
     30: (0,0,0),
     31: (170,0,0),
     32: (0,170,0),
