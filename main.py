@@ -18,7 +18,7 @@ def get_block(pixels, ascii_position, block_size):
     ascii_x, ascii_y = ascii_position
     x_interval = range(ascii_x * block_width, (ascii_x + 1) * block_width)
     y_interval = range(ascii_y * block_height, (ascii_y + 1) * block_height)
-    pixel_block = [[pixels[x, y][:3] for x in x_interval] for y in y_interval]
+    pixel_block = tuple(tuple(pixels[x, y][:3] for x in x_interval) for y in y_interval)
     return pixel_block
 
 
@@ -102,8 +102,16 @@ def create_art(image, ascii_width, block_size, convert_method):
     return '\n'.join(lines)
 
 
+def convert_monochrome(pixel_block, threshold=128):
+    pixel_block = to_mono(pixel_block, threshold=threshold)
+    return constants.block_symbols[block_size][pixel_block]
+
+
 def parse_resolution(arg):
     return tuple(map(int, arg.split('x')))
+
+def to_mono(pixel_block, threshold=128):
+    return tuple(tuple(int((r+g+b)//3<=threshold) for r, g, b in row) for row in pixel_block)
 
 
 if __name__ == '__main__':
@@ -112,6 +120,7 @@ if __name__ == '__main__':
         '3/4': convert_for_tty,
         '4': convert_4_bit,
         '24': convert_24_bit,
+        '0': convert_monochrome,
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('path',
