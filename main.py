@@ -1,9 +1,10 @@
-from PIL import Image
+from PIL import Image, ImageEnhance
 import os, argparse
 import constants
 
 
-def prepare_image(image, ascii_width, block_size):
+def prepare_image(initial_image, ascii_width, block_size, contrast=1):
+    image = ImageEnhance.Contrast(initial_image).enhance(contrast)
     image_width, image_height = image.size
     block_width, block_height = block_size
     ascii_height = image_height * ascii_width // (2 * image_width)
@@ -89,8 +90,8 @@ def convert_24_bit(pixel_block):
         return f'\033[1m{bottom_color} \033[00m'
 
 
-def create_art(image, ascii_width, block_size, convert_method):
-    prepared_image = prepare_image(image, ascii_width, block_size)
+def create_art(image, ascii_width, block_size, convert_method, **kwargs):
+    prepared_image = prepare_image(image, ascii_width, block_size, **kwargs)
     ascii_height = len(prepared_image)
     lines = []
     for ascii_y in range(ascii_height):
@@ -120,7 +121,7 @@ if __name__ == '__main__':
         '3/4': convert_for_tty,
         '4': convert_4_bit,
         '24': convert_24_bit,
-        '0': convert_monochrome,
+        '1': convert_monochrome,
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('path',
@@ -138,14 +139,20 @@ if __name__ == '__main__':
                         )
     parser.add_argument('--mode',
                         type=str,
-                        help="color depth (bits) used in art. Available: '3', '3/4', '4', '24'",
+                        help="color depth (bits) used in art. Available: '1' (monochrome), '3', '3/4', '4', '24'",
                         default='3/4',
+                        )
+    parser.add_argument('--contrast',
+                        type=float,
+                        help="change contrast of image. Default: 1",
+                        default=1,
                         )
     args = parser.parse_args()
     path = args.path
     ascii_width = args.width or os.get_terminal_size().columns
     image = Image.open(path)
+    contrast = args.contrast
     block_size = args.block
     convert_method = method_map[args.mode]
-    art = create_art(image, ascii_width, block_size, convert_method)
+    art = create_art(image, ascii_width, block_size, convert_method, contrast=contrast)
     print(art)
