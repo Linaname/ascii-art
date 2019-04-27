@@ -3,8 +3,9 @@ import os, argparse
 import constants
 
 
-def prepare_image(initial_image, ascii_width, block_size, contrast=1):
+def prepare_image(initial_image, ascii_width, block_size, contrast=1, brightness=1):
     image = ImageEnhance.Contrast(initial_image).enhance(contrast)
+    image = ImageEnhance.Brightness(image).enhance(brightness)
     image_width, image_height = image.size
     block_width, block_height = block_size
     ascii_height = image_height * ascii_width // (2 * image_width)
@@ -147,6 +148,11 @@ if __name__ == '__main__':
                         help="change contrast of image. Default: 1",
                         default=1,
                         )
+    parser.add_argument('--brightness',
+                        type=float,
+                        help="change brightness of image. Default: 1",
+                        default=1,
+                        )
     args = parser.parse_args()
     path = args.path
     ascii_width = args.width or os.get_terminal_size().columns
@@ -154,5 +160,6 @@ if __name__ == '__main__':
     contrast = args.contrast
     block_size = args.block
     convert_method = method_map[args.mode]
-    art = create_art(image, ascii_width, block_size, convert_method, contrast=contrast)
+    art = create_art(image, ascii_width, block_size, convert_method,
+                     contrast=contrast, brightness=args.brightness)
     print(art)
