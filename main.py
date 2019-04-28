@@ -1,11 +1,15 @@
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 import os, argparse
 import constants
+from constants import NBSP
 
 
-def prepare_image(initial_image, ascii_width, block_size, contrast=1, brightness=1):
-    image = ImageEnhance.Contrast(initial_image).enhance(contrast)
+def prepare_image(initial_image, ascii_width, block_size, contrast=1, brightness=1, reverse=False):
+    image = initial_image
+    if reverse:
+        image = ImageOps.invert(image)
     image = ImageEnhance.Brightness(image).enhance(brightness)
+    image = ImageEnhance.Contrast(image).enhance(contrast)
     image_width, image_height = image.size
     block_width, block_height = block_size
     ascii_height = image_height * ascii_width // (2 * image_width)
@@ -57,7 +61,7 @@ def convert_3_bit(pixel_block, r_threshold=128, g_threshold=128, b_threshold=128
         bottom = pixel_block[0][0]
         r, g, b = bottom
         bottom_color = 40 + (r >= r_threshold) * 1 + (g >= g_threshold) * 2 + (b >= b_threshold) * 4
-        return f'\033[0;{bottom_color}m \033[0m'
+        return f'\033[0;{bottom_color}m{NBSP}\033[0m'
 
 
 def convert_4_bit(pixel_block):
@@ -88,7 +92,7 @@ def convert_24_bit(pixel_block):
         bottom = pixel_block[0][0]
         r, g, b = map(lambda x: int((x/255)**1*255), bottom)
         bottom_color = f'\033[48;2;{r};{g};{b}m'
-        return f'\033[1m{bottom_color} \033[00m'
+        return f'\033[1m{bottom_color}{NBSP}\033[00m'
 
 
 def create_art(image, ascii_width, block_size, convert_method, **kwargs):
@@ -106,11 +110,13 @@ def create_art(image, ascii_width, block_size, convert_method, **kwargs):
 
 def convert_monochrome(pixel_block, threshold=128):
     pixel_block = to_mono(pixel_block, threshold=threshold)
+    block_size = len(pixel_block[0]), len(pixel_block)
     return constants.block_symbols[block_size][pixel_block]
 
 
 def parse_resolution(arg):
     return tuple(map(int, arg.split('x')))
+
 
 def to_mono(pixel_block, threshold=128):
     return tuple(tuple(int((r+g+b)//3<=threshold) for r, g, b in row) for row in pixel_block)
@@ -135,7 +141,7 @@ if __name__ == '__main__':
                         )
     parser.add_argument('--block',
                         type=parse_resolution,
-                        help="size of pixel block converted to single char. Available:\u00A0'x1'(default),\u00A0'1x2'",
+                        help="size of pixel block converted to single char. Available:\u00A0'1x1'(default),\u00A0'1x2'",
                         default='1x1',
                         )
     parser.add_argument('--mode',
@@ -153,6 +159,10 @@ if __name__ == '__main__':
                         help="change brightness of image. Default: 1",
                         default=1,
                         )
+    parser.add_argument('-r', '--reverse',
+                        help='reverse colors of image',
+                        action='store_true',
+                        )
     args = parser.parse_args()
     path = args.path
     ascii_width = args.width or os.get_terminal_size().columns
@@ -161,5 +171,7 @@ if __name__ == '__main__':
     block_size = args.block
     convert_method = method_map[args.mode]
     art = create_art(image, ascii_width, block_size, convert_method,
-                     contrast=contrast, brightness=args.brightness)
+                     contrast=args.contrast,
+                     brightness=args.brightness,
+                     reverse=args.reverse)
     print(art)
