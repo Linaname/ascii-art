@@ -12,7 +12,7 @@ def main():
     if request.method == 'POST':
         file = request.files['file']
         img = Image.open(file)
-        art = create_art(img, 80, (2, 2), convert_monochrome, brightness=0.9)
+        art = create_art(img, 200, (2, 2), convert_monochrome, brightness=0.9)
         lines = art.splitlines()
         return render_template('output.html', art=art)
     return render_template('main.html')
