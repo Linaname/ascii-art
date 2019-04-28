@@ -5,7 +5,7 @@ from constants import NBSP
 
 
 def prepare_image(initial_image, ascii_width, block_size, contrast=1, brightness=1, reverse=False):
-    image = initial_image
+    image = initial_image.convert('RGB')
     if reverse:
         image = ImageOps.invert(image)
     image = ImageEnhance.Brightness(image).enhance(brightness)
