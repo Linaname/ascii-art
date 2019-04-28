@@ -13,7 +13,7 @@ def main():
         img = Image.open(file)
         art = create_art(img, 80, (2, 2), convert_monochrome, brightness=0.9)
         lines = art.splitlines()
-        return render_template('output.html', lines=lines)
+        return render_template('output.html', art=art)
     return render_template('main.html')
 
 

@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <style>
-        .line {
+        .monospace {
             font-family: monospace;
+            letter-spacing: 0px;
+            line-height: 1;
         }
     </style>
 </head>
 <body>
-    {% for line in lines %}
-    <p class="line">{{ line }}</p>
-    {% endfor %}
+    <pre class="monospace">
+        {{ art }}
+    </pre>
 </body>
 </html>
