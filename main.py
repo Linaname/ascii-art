@@ -4,12 +4,14 @@ import constants
 from constants import NBSP
 
 
-def prepare_image(initial_image, ascii_width, block_size, contrast=1, brightness=1, reverse=False):
+def prepare_image(initial_image, ascii_width, block_size,
+                  contrast=1, brightness=1, reverse=False, mode='RGB'):
     image = initial_image.convert('RGB')
     if reverse:
         image = ImageOps.invert(image)
     image = ImageEnhance.Brightness(image).enhance(brightness)
     image = ImageEnhance.Contrast(image).enhance(contrast)
+    image = image.convert(mode)
     image_width, image_height = image.size
     block_width, block_height = block_size
     ascii_height = image_height * ascii_width // (2 * image_width)
@@ -24,7 +26,7 @@ def get_block(pixels, ascii_position, block_size):
     ascii_x, ascii_y = ascii_position
     x_interval = range(ascii_x * block_width, (ascii_x + 1) * block_width)
     y_interval = range(ascii_y * block_height, (ascii_y + 1) * block_height)
-    pixel_block = tuple(tuple(pixels[x, y][:3] for x in x_interval) for y in y_interval)
+    pixel_block = tuple(tuple(pixels[x, y] for x in x_interval) for y in y_interval)
     return pixel_block
 
 
@@ -119,7 +121,10 @@ def parse_resolution(arg):
 
 
 def to_mono(pixel_block, threshold=128):
-    return tuple(tuple(int((r+g+b)//3<=threshold) for r, g, b in row) for row in pixel_block)
+    if not isinstance(pixel_block[0][0], int):
+        return tuple(tuple(int(sum(bits[:3])//3<=threshold) for bits in row) for row in pixel_block)
+    else:
+        return tuple(tuple(int(point<=threshold) for point in row) for row in pixel_block)
 
 
 if __name__ == '__main__':
