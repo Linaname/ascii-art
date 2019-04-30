@@ -15,7 +15,7 @@ def get_file_path(uid):
 
 
 def create_art_uid(art):
-    uid = hashlib.md5(art.encode('utf-8')).hexdigest()
+    uid = hashlib.md5(art.encode('utf-8')).hexdigest()[:8]
     return uid
 
 
