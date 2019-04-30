@@ -39,8 +39,20 @@ def main():
     if request.method == 'GET':
         return render_template('main.html')
     file = request.files['file']
+    contrast = int(request.form.get('contrast', '100'))/100
+    brightness = int(request.form.get('brightness', '100'))/100
+    width = int(request.form.get('width', '200'))
+    block = request.form.get('block')
+    block_size = tuple(map(int, block.split('x')))
+    dithering = 'dithering' in request.form
+    mode = '1' if dithering else 'RGB'
     img = Image.open(file)
-    art = create_art(img, 200, (2, 2), convert_monochrome, contrast=5)
+    params = {
+        'contrast': contrast,
+        'brightness': brightness,
+        'mode': mode,
+    }
+    art = create_art(img, width, block_size, convert_monochrome, **params)
     uid = save_art(art)
     return flask.redirect(f'/{uid}')
 

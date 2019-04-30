@@ -6,7 +6,18 @@
 </head>
 <body>
     <form method="post" enctype="multipart/form-data">
-        <input name="file" type="file">
+        <input name="file" type="file" required>
+        <input name="dithering" type="checkbox"> Режим обработки фотографий
+        <br>
+        Ширина: <input name="width" type="number" value="200" max="1000">
+        <br>
+        Яркость: <input name="brightness" type="number" value="100">
+        <br>
+        Контраст: <input name="contrast" type="number" value="100">
+        <br>
+        <input name="block" type="radio" value="1x1">1x1<br>
+        <input name="block" type="radio" value="1x2">1x2<br>
+        <input name="block" type="radio" value="2x2" checked>2x2<br>
         <input type="submit">
     </form>
 </body>
