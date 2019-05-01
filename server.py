@@ -59,7 +59,10 @@ def main():
 
 @app.route('/<art_id>', methods=['GET'])
 def output(art_id):
-    art = load_art(art_id)
+    try:
+        art = load_art(art_id)
+    except FileNotFoundError:
+        flask.abort(404)
     return render_template('output.html', art=art)
 
 
